@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<title></title>
+<meta name="viewport" content="width=device-width">
+
+<style>
+
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    font: 17px/1.5 'Avenir', sans-serif;
+    color: #222;
+    margin: 5em;
+  }
+
+  [data-mesh-source] {
+    color: blue;
+    border-bottom: 1px dashed;
+  }
+  [data-mesh-source]:hover {
+    cursor: ns-resize;
+  }
+
+  [data-mesh-target] {
+    color: red;
+  }
+
+</style>
+
+<p>
+  I have
+  <span data-mesh-source="apples">12</span>
+  apples to split between
+  <span data-mesh-source="people">3</span>
+  people. Each gets
+  <span data-mesh-target="apples / people" data-mesh-whole>x</span> apples.
+</p>
+
+<p>
+  The square of
+  <span data-mesh-source="x">5</span>
+  is
+  <span data-mesh-target="x * x">x * x</span>.
+</p>
+
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js"></script>
+<script>
+  $(function () {
+    var attr = {
+      source: 'data-mesh-source',
+      target: 'data-mesh-target'
+    };
+
+    var $sources = $('['+attr.source+']'),
+        $targets = $('['+attr.target+']'),
+        data = {};
+
+    var updateTargets = $targets.each.bind($targets, function () {
+      var $this = $(this),
+          expr = $this
+                  .attr(attr.target)
+                  .replace(/[^a-z\/\+\-\*]/gi, ''),
+          parts = expr
+                    .match(/([a-z]+)([\/\+\-\*])([a-z]+)/i)
+                    .slice(1),
+          interpolated = parts
+                          .map(function (part) {
+                            if( data[part] !== undefined ) {
+                              return data[part];
+                            }
+                            return part;
+                          }),
+          result = eval(interpolated.join(''));
+
+      if( $this.is('[data-mesh-whole]') ) result = Math.floor(result);
+
+      $this.text(result || 0)
+    });
+
+    $sources.each(function () {
+      var $this = $(this);
+      data[$this.attr(attr.source)] = parseInt($this.text(), 10);
+
+      var drag = { active: false, start: {}, pos: {} },
+          update = function (e) {
+            if( !drag.active ) return;
+            drag.pos.y = e.pageY;
+            var raw_diff = (drag.start.y - drag.pos.y) / 10,
+                val = drag.start.val + Math.floor(raw_diff);
+            if( val < 0 || !val ) val = 0;
+            $this.text(val);
+            data[$this.attr(attr.source)] = val;
+            updateTargets();
+          };
+
+      $this
+        .on('mousedown', function (e) {
+          if( drag.active ) return;
+          e.preventDefault();
+          drag.active = true;
+          drag.start.y = e.pageY;
+          drag.start.val = parseInt($this.text(), 10);
+          $(this)
+            .parents()
+            .css({'cursor': 'ns-resize'});
+        })
+        .on('mousemove', update)
+        .on('mouseup', function () {
+          $(this)
+            .parents()
+            .css({'cursor': 'auto'});
+        });
+
+      $this
+        .parents()
+        .on('mousemove', update)
+        .on('mouseup', function () {
+          drag.active = false;
+          $(this).css({'cursor': 'auto'});
+        });
+    });
+
+    updateTargets();
+
+  });
+</script>
