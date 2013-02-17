@@ -74,13 +74,13 @@
   $.mesh = function (userConfig) {
     /* Defaul config */
     var defaultConfig = {
-      dragSpeed: 1,
-      updateDelay: 50,
-      saveDelay: 300,
-      touch: ('ontouchstart' in window),
-      save: ('localStorage' in window),
-      prefix: 'data-mesh-',
-      decimalPlaces: 2
+      prefix        : 'data-mesh-',
+      save          : ('localStorage' in window),
+      touch         : ('ontouchstart' in window),
+      decimalPlaces : 2,
+      dragSpeed     : 1,
+      saveDelay     : 300,
+      updateDelay   : 50
     };
 
     /* Build a config from the one supplied */
@@ -88,21 +88,21 @@
 
     /* Events to listen to */
     var events = {
-      start: (config.touch ? 'touchstart' : 'mousedown'),
-      move: (config.touch ? 'touchmove' : 'mousemove'),
-      end: (config.touch ? 'touchend' : 'mouseup'),
+      start : (config.touch ? 'touchstart' : 'mousedown'),
+      move  : (config.touch ? 'touchmove' : 'mousemove'),
+      end   : (config.touch ? 'touchend' : 'mouseup'),
     };
 
     /* Recognised attribute types */
     var attr = {
-      source: config.prefix + 'source',
-      target: config.prefix + 'target',
-      whole: config.prefix + 'whole',
-      decimal: config.prefix + 'decimal',
-      min: config.prefix + 'min',
-      max: config.prefix + 'max',
-      positive: config.prefix + 'positive',
-      active: config.prefix + 'active'
+      source    : config.prefix + 'source',
+      target    : config.prefix + 'target',
+      whole     : config.prefix + 'whole',
+      decimal   : config.prefix + 'decimal',
+      min       : config.prefix + 'min',
+      max       : config.prefix + 'max',
+      positive  : config.prefix + 'positive',
+      active    : config.prefix + 'active'
     };
 
     /* Decimal place rounding */
@@ -143,13 +143,13 @@
         result = parseFloat(eval(expression), 10);
 
         /* Round to decimal places if required */
-        if( $this.is('['+attr.decimal+']') ) {
+        if ($this.is('['+attr.decimal+']')) {
           decimalPlaces = parseInt($this.attr(attr.decimal), 10) || decimalPlaces;
           result = roundToDp(result, decimalPlaces);
         }
 
         /* Round it if required*/
-        if( $this.is('['+attr.whole+']') ) result = Math.floor(result);
+        if ($this.is('['+attr.whole+']')) result = Math.floor(result);
 
       } catch (e) {
         result = '0 (an error occurred)';
@@ -173,7 +173,7 @@
     var prepareSave = (function () {
       var saveTimer = {};
       return function (source, value) {
-        if( !config.save ) return;
+        if (!config.save) return;
         clearTimeout(saveTimer[source]);
         saveTimer[source] = setTimeout(function () {
           /* Just save to localStorage with the appropriate prefix */
@@ -191,7 +191,7 @@
     var extractEvent = function (e) {
       var touch;
       /* If it's a touch event, copy the info over */
-      if( config.touch && e.originalEvent.touches.length > 0 ) {
+      if (config.touch && e.originalEvent.touches.length > 0) {
         /* Assume one touch. Possible improvement here */
         touch = e.originalEvent.touches[0];
         /* Copy it real good */
@@ -212,14 +212,14 @@
           maxValue = parseFloat($this.attr(attr.max), 10) || Infinity;
 
       /* Allow numbers to be clamped to positive values */
-      if( $this.is('['+attr.positive+']') ) minValue = 0;
+      if ($this.is('['+attr.positive+']')) minValue = 0;
 
       /* Update the value of this source */
       var updateValue = function (value) {
         /* Clamp or limit the value */
-        if( value !== 0 && !value ) value = 0;
-        if( value < minValue ) value = minValue;
-        if( value > maxValue ) value = maxValue;
+        if (value !== 0 && !value) value = 0;
+        if (value < minValue) value = minValue;
+        if (value > maxValue) value = maxValue;
 
         /* Update the display and storage */
         $this.text(value);
@@ -234,7 +234,7 @@
       var drag = { active: false, start: {}, pos: {} };
       /* And an update function for the source's value */
       var update = function (e) {
-        if( !drag.active ) return;
+        if (!drag.active) return;
 
         /* Grab the important data */
         e = extractEvent(e);
@@ -269,7 +269,7 @@
       /* Drag handlers. Yeah, this is alot. */
       $this
         .on(events.start, function (e) {
-          if( drag.active ) return;
+          if (drag.active) return;
           e = extractEvent(e);
           e.preventDefault();
           drag.active = true;
