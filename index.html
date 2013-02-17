@@ -213,14 +213,14 @@
 
     /* Initialise all the sources, including attaching event handlers */
     $sources.each(function () {
-      var $this = $(this),
-          source = $this.attr(attr.source),
+      var $this        = $(this),
+          source       = $this.attr(attr.source),
           initialValue = parseFloat($this.text(), 10),
-          minValue = parseFloat($this.attr(attr.min), 10) || -Infinity,
-          maxValue = parseFloat($this.attr(attr.max), 10) || Infinity;
+          minValue     = parseFloat($this.attr(attr.min), 10) || -Infinity,
+          maxValue     = parseFloat($this.attr(attr.max), 10) || Infinity;
 
       /* Allow numbers to be clamped to positive values */
-      if ($this.is('['+attr.positive+']')) minValue = 0;
+      if ($this.is('['+attr.positive+']') && minValue === -Infinity) minValue = 0;
 
       /* Update the value of this source */
       var updateValue = function (value) {
