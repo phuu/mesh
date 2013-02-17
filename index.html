@@ -43,69 +43,135 @@
   apples to split between
   <span data-mesh-source="people">3</span>
   people. Each gets
-  <span data-mesh-target="apples / people" data-mesh-whole>x</span> apples.
+  <span data-mesh-target="@apples / @people" data-mesh-whole>x</span> apples.
 </p>
 
 <p>
   The square of
   <span data-mesh-source="x">5</span>
   is
-  <span data-mesh-target="x * x">x * x</span>.
+  <span data-mesh-target="@x * @x">x * x</span>.
+</p>
+
+<p>
+  According to Hick's Law, if the user's skill is
+  <span data-mesh-source="skill">5</span>
+  and there are
+  <span data-mesh-source="items">5</span>
+  items on the page,
+  the time taken to make a decision is
+  <span data-mesh-target="@skill * (Math.log(@items + 1) / Math.log(2))" data-mesh-whole></span>.
 </p>
 
 <script src="jquery.js"></script>
 <script>
   $(function () {
-    var attr = {
-      source: 'data-mesh-source',
-      target: 'data-mesh-target'
+    /* Config */
+    var config = {
+      dragSpeed: 1,
+      updateDelay: 100,
+      touch: ('ontouchstart' in window)
     };
 
-    var $sources = $('['+attr.source+']'),
-        $targets = $('['+attr.target+']'),
-        data = {};
+    var events = {
+      start: (config.touch ? 'touchstart' : 'mousedown'),
+      move: (config.touch ? 'touchmove' : 'mousemove'),
+      end: (config.touch ? 'touchend' : 'mouseup'),
+    };
 
+    /* Recognised attribute types */
+    var attr = {
+      source: 'data-mesh-source',
+      target: 'data-mesh-target',
+      whole: 'data-mesh-whole'
+    };
+
+    /* Grab the nodes we want */
+    var $sources = $('['+attr.source+']')
+      , $targets = $('['+attr.target+']')
+      , data     = {};
+
+    /* Update all the target's values with the calculated value from the sources */
     var updateTargets = $targets.each.bind($targets, function () {
-      var $this = $(this),
-          expr = $this
-                  .attr(attr.target)
-                  .replace(/[^a-z\/\+\-\*]/gi, ''),
-          parts = expr
-                    .match(/([a-z]+)([\/\+\-\*])([a-z]+)/i)
-                    .slice(1),
-          interpolated = parts
-                          .map(function (part) {
-                            if( data[part] !== undefined ) {
-                              return data[part];
-                            }
-                            return part;
-                          }),
-          result = eval(interpolated.join(''));
+      var $this        = $(this),
+          expr         = $this
+                           .attr(attr.target)
+                           /* Remove disallowed values */
+                           .replace(/[^a-z0-9\/\+\-\*\(\)\.\@]/gi, ''),
+          interpolated = expr,
+          result = 0;
 
-      if( $this.is('[data-mesh-whole]') ) result = Math.floor(result);
+      /* Grab all the source names and replace them for their values in the expression */
+      Object.keys(data)
+        .forEach(function (source) {
+          interpolated = interpolated.replace(new RegExp('@' + source, 'ig'), data[source]);
+        });
 
-      $this.text(result || 0)
+      try {
+
+        /* Eval it (eek) against the page */
+        result = eval(interpolated);
+
+        /* Round it if required*/
+        if( $this.is('['+attr.whole+']') ) result = Math.floor(result);
+
+      } catch (e) {
+        result = '0 (an error occurred)';
+      }
+
+      /* Send it on back */
+      $this.text(result || 0);
     });
 
+    var prepareUpdate = (function () {
+      var updateTimer;
+      return function () {
+        clearTimeout(updateTimer);
+        updateTimer = setTimeout(updateTargets, config.updateDelay || 100);
+      };
+    }());
+
+    var extractEvent = function (e) {
+      var touch;
+      /* If it's a touch event, copy the info over */
+      if( config.touch && e.originalEvent.touches.length > 0 ) {
+        touch = e.originalEvent.touches[0];
+        Object.keys(touch)
+          .forEach(function (key) {
+            e[key] = touch[key];
+          });
+      }
+      return e;
+    };
+
+    /* Initialise all the sources, including attaching event handlers */
     $sources.each(function () {
       var $this = $(this);
-      data[$this.attr(attr.source)] = parseInt($this.text(), 10);
 
-      var drag = { active: false, start: {}, pos: {} },
-          update = function (e) {
-            if( !drag.active ) return;
-            drag.pos.y = e.pageY;
-            var raw_diff = (drag.start.y - drag.pos.y) / 10,
-                val = drag.start.val + Math.floor(raw_diff);
-            if( val < 0 || !val ) val = 0;
-            $this.text(val);
-            data[$this.attr(attr.source)] = val;
-            updateTargets();
-          };
+      data[$this.attr(attr.source)] = parseFloat($this.text(), 10);
 
+      var drag, update;
+
+      /* Store information about current drag*/
+      drag = { active: false, start: {}, pos: {} };
+      /* And an update function for the source's value */
+      update = function (e) {
+        if( !drag.active ) return;
+        e = extractEvent(e);
+        drag.pos.y = e.pageY;
+        var raw_diff = (drag.start.y - drag.pos.y) / (10 / (config.dragSpeed || 1)),
+            val = drag.start.val + Math.floor(raw_diff);
+        if( val < 0 || !val ) val = 0;
+        $this.text(val);
+        data[$this.attr(attr.source)] = val;
+        prepareUpdate();
+      };
+
+      /* Drag handlers. Yeah, this is alot. */
       $this
-        .on('mousedown', function (e) {
+        .on(events.start, function (e) {
           if( drag.active ) return;
+          e = extractEvent(e);
           e.preventDefault();
           drag.active = true;
           drag.start.y = e.pageY;
@@ -114,8 +180,9 @@
             .parents()
             .css({'cursor': 'ns-resize'});
         })
-        .on('mousemove', update)
-        .on('mouseup', function () {
+        .on(events.move, update)
+        .on(events.end, function () {
+          drag.active = false;
           $(this)
             .parents()
             .css({'cursor': 'auto'});
@@ -123,14 +190,14 @@
 
       $this
         .parents()
-        .on('mousemove', update)
-        .on('mouseup', function () {
+        .on(events.move, update)
+        .on(events.end, function () {
           drag.active = false;
           $(this).css({'cursor': 'auto'});
         });
     });
 
-    updateTargets();
+    prepareUpdate();
 
   });
 </script>
