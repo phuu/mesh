@@ -60,6 +60,13 @@
 </p>
 
 <p>
+  The cube root of
+  <span data-mesh-source="y" data-mesh-max="100" data-mesh-min="1">27</span>
+  is
+  <span data-mesh-target="Math.pow(@y, 1/3)" data-mesh-decimal="4">y ^ 1/3</span>.
+</p>
+
+<p>
   According to Hick's Law, if the user's skill is
   <span data-mesh-source="skill" data-mesh-min="1" data-mesh-positive data-mesh-decimal>5</span>
   and there are
@@ -91,6 +98,7 @@
       start : (config.touch ? 'touchstart' : 'mousedown'),
       move  : (config.touch ? 'touchmove' : 'mousemove'),
       end   : (config.touch ? 'touchend' : 'mouseup'),
+      reset : 'dblclick'
     };
 
     /* Recognised attribute types */
@@ -128,8 +136,8 @@
         $this
           .attr(attr.target)
           /* Remove disallowed values
-             (allow: a-z, 0-9, maths operators, brackets, dots, @ and whitespace) */
-          .replace(/[^a-z0-9\/\+\-\*\(\)\.\@\s]/gi, '');
+             (allow: a-z, 0-9, maths operators, brackets, dots, commas, @ and whitespace) */
+          .replace(/[^a-z0-9\/\+\-\*\(\)\.,\@\s]/gi, '');
 
       /* Grab all the source names and replace them for their values in the expression */
       Object.keys(data)
@@ -280,7 +288,8 @@
             .addClass(attr.active)
         })
         .on(events.move, update)
-        .on(events.end, end);
+        .on(events.end, end)
+        .on(events.reset, updateValue.bind(this, initialValue))
 
       $this
         .parents()
