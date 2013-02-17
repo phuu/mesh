@@ -12,7 +12,7 @@
   body {
     font: 17px/1.5 'Avenir', sans-serif;
     color: #222;
-    margin: 5em;
+    margin: 10%;
   }
 
   [data-mesh-active] {
@@ -71,16 +71,22 @@
 
 <script src="jquery.js"></script>
 <script>
-  $(function () {
-    /* Config */
-    var config = {
+  $.mesh = function (userConfig) {
+    /* Defaul config */
+    var defaultConfig = {
       dragSpeed: 1,
-      updateDelay: 100,
+      updateDelay: 50,
+      saveDelay: 300,
       touch: ('ontouchstart' in window),
       save: ('localStorage' in window),
-      prefix: 'data-mesh-'
+      prefix: 'data-mesh-',
+      decimalPlaces: 2
     };
 
+    /* Build a config from the one supplied */
+    var config = $.extend({}, defaultConfig, userConfig || {});
+
+    /* Events to listen to */
     var events = {
       start: (config.touch ? 'touchstart' : 'mousedown'),
       move: (config.touch ? 'touchmove' : 'mousemove'),
@@ -112,25 +118,29 @@
 
     /* Update all the target's values with the calculated value from the sources */
     var updateTargets = $targets.each.bind($targets, function () {
-      var $this        = $(this),
-          expr         = $this
-                           .attr(attr.target)
-                           /* Remove disallowed values */
-                           .replace(/[^a-z0-9\/\+\-\*\(\)\.\@]/gi, ''),
-          interpolated = expr,
-          result = 0,
-          decimalPlaces = 2;
+      var $this         = $(this),
+          result        = 0,
+          decimalPlaces = config.decimalPlaces,
+          expr, interpolated;
+
+      /* Grab the raw expression from the target and filter it */
+      expression =
+        $this
+          .attr(attr.target)
+          /* Remove disallowed values
+             (allow: a-z, 0-9, maths operators, brackets, dots, @ and whitespace) */
+          .replace(/[^a-z0-9\/\+\-\*\(\)\.\@\s]/gi, '');
 
       /* Grab all the source names and replace them for their values in the expression */
       Object.keys(data)
         .forEach(function (source) {
-          interpolated = interpolated.replace(new RegExp('@' + source, 'ig'), data[source]);
+          expression = expression.replace(new RegExp('@' + source, 'ig'), data[source]);
         });
 
       try {
 
         /* Eval it (eek) against the page */
-        result = parseFloat(eval(interpolated), 10);
+        result = parseFloat(eval(expression), 10);
 
         /* Round to decimal places if required */
         if( $this.is('['+attr.decimal+']') ) {
@@ -143,6 +153,7 @@
 
       } catch (e) {
         result = '0 (an error occurred)';
+        console.log('Could not product for target with expression "%s"', expression);
       }
 
       /* Send it on back */
@@ -165,8 +176,9 @@
         if( !config.save ) return;
         clearTimeout(saveTimer[source]);
         saveTimer[source] = setTimeout(function () {
+          /* Just save to localStorage with the appropriate prefix */
           localStorage.setItem(config.prefix + source, value);
-        }, config.updateDelay || 100);
+        }, config.saveDelay || 100);
       };
     }());
 
@@ -180,7 +192,9 @@
       var touch;
       /* If it's a touch event, copy the info over */
       if( config.touch && e.originalEvent.touches.length > 0 ) {
+        /* Assume one touch. Possible improvement here */
         touch = e.originalEvent.touches[0];
+        /* Copy it real good */
         Object.keys(touch)
           .forEach(function (key) {
             e[key] = touch[key];
@@ -206,6 +220,7 @@
         if( value !== 0 && !value ) value = 0;
         if( value < minValue ) value = minValue;
         if( value > maxValue ) value = maxValue;
+
         /* Update the display and storage */
         $this.text(value);
         data[source] = value;
@@ -273,6 +288,11 @@
         .on(events.end, end);
     });
 
+    /* Let's go! */
     prepareUpdate();
+  };
+
+  $.mesh({
+    /* Config goes here! */
   });
 </script>
