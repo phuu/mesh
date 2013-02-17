@@ -35,29 +35,31 @@
 
 <p>The idea is to be able to link data across a page quickly and easily, to get an understanding of how changing data affects outcomes.</p>
 
+<p>Click and drag, up or down, on the numbers below to see how the result changes.</p>
+
 <hr>
 
 <p>
   I have
-  <span data-mesh-source="apples">12</span>
+  <span data-mesh-source="apples" data-mesh-positive>12</span>
   apples to split between
-  <span data-mesh-source="people">3</span>
+  <span data-mesh-source="people" data-mesh-min="1" data-mesh-positive>3</span>
   people. Each gets
   <span data-mesh-target="@apples / @people" data-mesh-decimal="1">x</span> apples.
 </p>
 
 <p>
   The square of
-  <span data-mesh-source="x">5</span>
+  <span data-mesh-source="x" data-mesh-max="10" data-mesh-min="-10">5</span>
   is
   <span data-mesh-target="@x * @x">x * x</span>.
 </p>
 
 <p>
   According to Hick's Law, if the user's skill is
-  <span data-mesh-source="skill">5</span>
+  <span data-mesh-source="skill" data-mesh-min="1" data-mesh-positive>5</span>
   and there are
-  <span data-mesh-source="items">5</span>
+  <span data-mesh-source="items" data-mesh-positive>5</span>
   items on the page,
   the time taken to make a decision is
   <span data-mesh-target="@skill * (Math.log(@items + 1) / Math.log(2))" data-mesh-decimal></span>.
@@ -84,7 +86,10 @@
       source: 'data-mesh-source',
       target: 'data-mesh-target',
       whole: 'data-mesh-whole',
-      decimal: 'data-mesh-decimal'
+      decimal: 'data-mesh-decimal',
+      min: 'data-mesh-min',
+      max: 'data-mesh-max',
+      positive: 'data-mesh-positive'
     };
 
     /* Grab the nodes we want */
@@ -155,9 +160,16 @@
 
     /* Initialise all the sources, including attaching event handlers */
     $sources.each(function () {
-      var $this = $(this);
+      var $this = $(this),
+          source = $this.attr(attr.source),
+          minValue = parseFloat($this.attr(attr.min), 10) || -Infinity,
+          maxValue = parseFloat($this.attr(attr.max), 10) || Infinity;
 
-      data[$this.attr(attr.source)] = parseFloat($this.text(), 10);
+      /* Allow numbers to be clamped to positive values */
+      if( $this.is('['+attr.positive+']') ) minValue = 0;
+
+      /* Extract an initial value for the source*/
+      data[source] = parseFloat($this.text(), 10);
 
       var drag, update;
 
@@ -168,11 +180,16 @@
         if( !drag.active ) return;
         e = extractEvent(e);
         drag.pos.y = e.pageY;
+        /* Calculate the value based on the drag distance */
         var raw_diff = (drag.start.y - drag.pos.y) / (10 / (config.dragSpeed || 1)),
             val = drag.start.val + Math.floor(raw_diff);
-        if( val < 0 || !val ) val = 0;
+        /* Clamp or limit the value */
+        if( val !== 0 && !val ) val = 0;
+        if( val < minValue ) val = minValue;
+        if( val > maxValue ) val = maxValue;
+        /* Update the display and prepare a target update */
         $this.text(val);
-        data[$this.attr(attr.source)] = val;
+        data[source] = val;
         prepareUpdate();
       };
 
