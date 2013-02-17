@@ -233,7 +233,7 @@
         diff = ($this.is('['+attr.decimal+']') ? roundToDp(raw_diff, 1) : Math.floor(raw_diff));
 
         /* Calculate the new value */
-        val = drag.start.val + diff;
+        val = roundToDp(drag.start.val + diff, 14);
 
         /* And perform an update */
         updateValue(val);
