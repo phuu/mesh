@@ -15,6 +15,10 @@
     margin: 5em;
   }
 
+  [data-mesh-active] {
+    cursor: ns-resize;
+  }
+
   [data-mesh-source] {
     color: blue;
     border-bottom: 1px dashed;
@@ -31,9 +35,9 @@
 
 <h1>mesh</h1>
 
-<p>A 90 minute project with the theme "understand fast".</p>
+<p>Originally a 90 minute project with the theme "understand fast".</p>
 
-<p>The idea is to be able to link data across a page quickly and easily, to get an understanding of how changing data affects outcomes.</p>
+<p>The idea is to be able to link data across a page quickly and easily, to give the user an understanding of how changing data affects outcomes.</p>
 
 <p>Click and drag, up or down, on the numbers below to see how the result changes.</p>
 
@@ -57,7 +61,7 @@
 
 <p>
   According to Hick's Law, if the user's skill is
-  <span data-mesh-source="skill" data-mesh-min="1" data-mesh-positive>5</span>
+  <span data-mesh-source="skill" data-mesh-min="1" data-mesh-positive data-mesh-decimal>5</span>
   and there are
   <span data-mesh-source="items" data-mesh-positive>5</span>
   items on the page,
@@ -72,7 +76,9 @@
     var config = {
       dragSpeed: 1,
       updateDelay: 100,
-      touch: ('ontouchstart' in window)
+      touch: ('ontouchstart' in window),
+      save: ('localStorage' in window),
+      prefix: 'data-mesh-'
     };
 
     var events = {
@@ -83,19 +89,26 @@
 
     /* Recognised attribute types */
     var attr = {
-      source: 'data-mesh-source',
-      target: 'data-mesh-target',
-      whole: 'data-mesh-whole',
-      decimal: 'data-mesh-decimal',
-      min: 'data-mesh-min',
-      max: 'data-mesh-max',
-      positive: 'data-mesh-positive'
+      source: config.prefix + 'source',
+      target: config.prefix + 'target',
+      whole: config.prefix + 'whole',
+      decimal: config.prefix + 'decimal',
+      min: config.prefix + 'min',
+      max: config.prefix + 'max',
+      positive: config.prefix + 'positive',
+      active: config.prefix + 'active'
+    };
+
+    /* Decimal place rounding */
+    var roundToDp = function (value, decimalPlaces) {
+      return Math.round(value * Math.pow(10, decimalPlaces)) / Math.pow(10, decimalPlaces)
     };
 
     /* Grab the nodes we want */
-    var $sources = $('['+attr.source+']')
-      , $targets = $('['+attr.target+']')
-      , data     = {};
+    var $body    = $('body'),
+        $sources = $('['+attr.source+']'),
+        $targets = $('['+attr.target+']'),
+        data     = {};
 
     /* Update all the target's values with the calculated value from the sources */
     var updateTargets = $targets.each.bind($targets, function () {
@@ -122,12 +135,11 @@
         /* Round to decimal places if required */
         if( $this.is('['+attr.decimal+']') ) {
           decimalPlaces = parseInt($this.attr(attr.decimal), 10) || decimalPlaces;
-          result = Math.round(result * Math.pow(10, decimalPlaces)) / Math.pow(10, decimalPlaces);
+          result = roundToDp(result, decimalPlaces);
         }
 
         /* Round it if required*/
         if( $this.is('['+attr.whole+']') ) result = Math.floor(result);
-
 
       } catch (e) {
         result = '0 (an error occurred)';
@@ -137,6 +149,7 @@
       $this.text(result || 0);
     });
 
+    /* Set a timer to update all targets */
     var prepareUpdate = (function () {
       var updateTimer;
       return function () {
@@ -145,6 +158,24 @@
       };
     }());
 
+    /* Set a timer to save a particular source */
+    var prepareSave = (function () {
+      var saveTimer = {};
+      return function (source, value) {
+        if( !config.save ) return;
+        clearTimeout(saveTimer[source]);
+        saveTimer[source] = setTimeout(function () {
+          localStorage.setItem(config.prefix + source, value);
+        }, config.updateDelay || 100);
+      };
+    }());
+
+    /* Restore a value from localStorage if it's enabled */
+    var restore = function (source) {
+      return (config.save ? localStorage.getItem(config.prefix + source) : false);
+    };
+
+    /* Extract important information for an event */
     var extractEvent = function (e) {
       var touch;
       /* If it's a touch event, copy the info over */
@@ -162,36 +193,63 @@
     $sources.each(function () {
       var $this = $(this),
           source = $this.attr(attr.source),
+          initialValue = parseFloat($this.text(), 10),
           minValue = parseFloat($this.attr(attr.min), 10) || -Infinity,
           maxValue = parseFloat($this.attr(attr.max), 10) || Infinity;
 
       /* Allow numbers to be clamped to positive values */
       if( $this.is('['+attr.positive+']') ) minValue = 0;
 
-      /* Extract an initial value for the source*/
-      data[source] = parseFloat($this.text(), 10);
+      /* Update the value of this source */
+      var updateValue = function (value) {
+        /* Clamp or limit the value */
+        if( value !== 0 && !value ) value = 0;
+        if( value < minValue ) value = minValue;
+        if( value > maxValue ) value = maxValue;
+        /* Update the display and storage */
+        $this.text(value);
+        data[source] = value;
 
-      var drag, update;
+        /* Update the targets and save */
+        prepareUpdate();
+        prepareSave(source, value);
+      };
 
       /* Store information about current drag*/
-      drag = { active: false, start: {}, pos: {} };
+      var drag = { active: false, start: {}, pos: {} };
       /* And an update function for the source's value */
-      update = function (e) {
+      var update = function (e) {
         if( !drag.active ) return;
+
+        /* Grab the important data */
         e = extractEvent(e);
         drag.pos.y = e.pageY;
+
+        var raw_diff, diff;
+
         /* Calculate the value based on the drag distance */
-        var raw_diff = (drag.start.y - drag.pos.y) / (10 / (config.dragSpeed || 1)),
-            val = drag.start.val + Math.floor(raw_diff);
-        /* Clamp or limit the value */
-        if( val !== 0 && !val ) val = 0;
-        if( val < minValue ) val = minValue;
-        if( val > maxValue ) val = maxValue;
-        /* Update the display and prepare a target update */
-        $this.text(val);
-        data[source] = val;
-        prepareUpdate();
+        raw_diff = (drag.start.y - drag.pos.y) / (10 / (config.dragSpeed || 1));
+        /* If this source is allowed to be decimal, don't floor it */
+        diff = ($this.is('['+attr.decimal+']') ? roundToDp(raw_diff, 1) : Math.floor(raw_diff));
+
+        /* Calculate the new value */
+        val = drag.start.val + diff;
+
+        /* And perform an update */
+        updateValue(val);
       };
+
+      var end = function () {
+        drag.active = false;
+        $body
+          .removeAttr(attr.active)
+          .removeClass(attr.active);
+      };
+
+      /* Setup */
+
+      /* If we're saving, and there's a value, grab it */
+      updateValue(restore(source) || initialValue);
 
       /* Drag handlers. Yeah, this is alot. */
       $this
@@ -201,29 +259,20 @@
           e.preventDefault();
           drag.active = true;
           drag.start.y = e.pageY;
-          drag.start.val = parseInt($this.text(), 10);
-          $(this)
-            .parents()
-            .css({'cursor': 'ns-resize'});
+          drag.start.val = parseFloat($this.text(), 10);
+          $body
+            .attr(attr.active, true)
+            .addClass(attr.active)
         })
         .on(events.move, update)
-        .on(events.end, function () {
-          drag.active = false;
-          $(this)
-            .parents()
-            .css({'cursor': 'auto'});
-        });
+        .on(events.end, end);
 
       $this
         .parents()
         .on(events.move, update)
-        .on(events.end, function () {
-          drag.active = false;
-          $(this).css({'cursor': 'auto'});
-        });
+        .on(events.end, end);
     });
 
     prepareUpdate();
-
   });
 </script>
