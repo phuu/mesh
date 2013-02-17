@@ -43,7 +43,7 @@
   apples to split between
   <span data-mesh-source="people">3</span>
   people. Each gets
-  <span data-mesh-target="@apples / @people" data-mesh-whole>x</span> apples.
+  <span data-mesh-target="@apples / @people" data-mesh-decimal="1">x</span> apples.
 </p>
 
 <p>
@@ -60,7 +60,7 @@
   <span data-mesh-source="items">5</span>
   items on the page,
   the time taken to make a decision is
-  <span data-mesh-target="@skill * (Math.log(@items + 1) / Math.log(2))" data-mesh-whole></span>.
+  <span data-mesh-target="@skill * (Math.log(@items + 1) / Math.log(2))" data-mesh-decimal></span>.
 </p>
 
 <script src="jquery.js"></script>
@@ -83,7 +83,8 @@
     var attr = {
       source: 'data-mesh-source',
       target: 'data-mesh-target',
-      whole: 'data-mesh-whole'
+      whole: 'data-mesh-whole',
+      decimal: 'data-mesh-decimal'
     };
 
     /* Grab the nodes we want */
@@ -99,7 +100,8 @@
                            /* Remove disallowed values */
                            .replace(/[^a-z0-9\/\+\-\*\(\)\.\@]/gi, ''),
           interpolated = expr,
-          result = 0;
+          result = 0,
+          decimalPlaces = 2;
 
       /* Grab all the source names and replace them for their values in the expression */
       Object.keys(data)
@@ -110,10 +112,17 @@
       try {
 
         /* Eval it (eek) against the page */
-        result = eval(interpolated);
+        result = parseFloat(eval(interpolated), 10);
+
+        /* Round to decimal places if required */
+        if( $this.is('['+attr.decimal+']') ) {
+          decimalPlaces = parseInt($this.attr(attr.decimal), 10) || decimalPlaces;
+          result = Math.round(result * Math.pow(10, decimalPlaces)) / Math.pow(10, decimalPlaces);
+        }
 
         /* Round it if required*/
         if( $this.is('['+attr.whole+']') ) result = Math.floor(result);
+
 
       } catch (e) {
         result = '0 (an error occurred)';
