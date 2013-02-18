@@ -102,13 +102,21 @@
       min       : config.prefix + 'min',
       max       : config.prefix + 'max',
       positive  : config.prefix + 'positive',
-      active    : config.prefix + 'active'
+      active    : config.prefix + 'active',
+      currency  : config.prefix + 'currency'
     };
 
     /* Decimal place rounding */
     var roundToDp = function (value, decimalPlaces) {
       var exponent = Math.pow(10, decimalPlaces);
       return Math.round(value * exponent) / exponent;
+    };
+
+    var currency = function (value) {
+      var raw = roundToDp(value, 2),
+          whole = Math.floor(raw),
+          decimal = '00' + roundToDp((raw - whole) * 100, 0);
+      return whole + '.' + decimal.slice(-2);
     };
 
     /* Grab the nodes we want */
@@ -154,6 +162,8 @@
 
         /* Round it if required*/
         if ($this.is('['+attr.whole+']')) result = Math.floor(result);
+
+        if ($this.is('['+attr.currency+']')) result = currency(result);
 
       } catch (e) {
         result = '0 (an error occurred)';

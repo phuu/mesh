@@ -83,6 +83,17 @@
   <span data-mesh-formula="@bananas / (@others + 1)" data-mesh-whole>2</span> bananas.
 </p>
 
+<p>
+  At a restaurant our bill is
+  £<span data-mesh-source="bill" data-mesh-positive>80</span> &ndash;
+  split between
+  <span data-mesh-source="patrons" data-mesh-positive data-mesh-max="15">4</span>
+  of us &ndash; and we want to leave a
+  <span data-mesh-source="tip" data-mesh-positive data-mesh-max="100">20</span>% tip.
+  Each of us pays
+  £<span data-mesh-formula="(@bill * (1 + @tip / 100)) / @patrons" data-mesh-currency>x</span>.
+</p>
+
 <script src="jquery.js"></script>
 <script src="mesh.js"></script>
 <script>
