@@ -10,7 +10,7 @@
  * users a deeper understanding of their data.
  *
  * Click (or touch) and drag on a 'source' linked to a 'formula' to see how
- * things change, set up using simple HTML with data attributes.
+ * things change, and build your own using simple HTML with data attributes.
  *
  * Example usage:
 
