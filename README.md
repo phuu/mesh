@@ -10,7 +10,7 @@ Click (or touch) and drag on a 'source' linked to a 'target' to see how things c
 
 Play with the [demo](http://phuu.github.com/mesh).
 
-## Example usage:
+## Example usage
 
 **mesh** requires [jQuery](http://cdnjs.com/#jquery), and if you're planning to support older browsers, the [es5-shim](https://github.com/kriskowal/es5-shim).
 
