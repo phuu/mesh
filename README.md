@@ -8,6 +8,8 @@ The idea is to be to allow you to quickly understand how different values in tar
 
 Click (or touch) and drag on a 'source' linked to a 'target' to see how things change, and build your own using simple HTML with data attributes.
 
+Play with the [demo](http://phuu.github.com/mesh).
+
 ## Example usage:
 
 **mesh** requires [jQuery](http://cdnjs.com/#jquery), and if you're planning to support older browsers, the [es5-shim](https://github.com/kriskowal/es5-shim).
@@ -26,7 +28,6 @@ me and <span data-mesh-source="others">2</span> others. Each of us gets
 </script>
 ```
 
-See the [demo](http://phuu.github.com/mesh)
 
 
 
@@ -210,7 +211,7 @@ value to localStorage.
 
 ## Good to know
 
-- Multiple sources on the same page *will* conflict.
+- Multiple sources with the same name on the same page *will* conflict.
 - You cannot currently make an element both a source and a target. This is planned, but introduces a whole heap of complexity.
 - You can double click on a source to reset it.
 
