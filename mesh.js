@@ -6,17 +6,17 @@
  * MIT License
  *
  * mesh is a tool to allow you to quickly understand how different values in a
- * formula affect it's outcome, demonstrate a mathematical function or give your
+ * target affect it's outcome, demonstrate a mathematical function or give your
  * users a deeper understanding of their data.
  *
- * Click (or touch) and drag on a 'source' linked to a 'formula' to see how
+ * Click (or touch) and drag on a 'source' linked to a 'target' to see how
  * things change, and build your own using simple HTML with data attributes.
  *
  * Example usage:
 
     I have <span data-mesh-source="bananas">6</span> bananas to split between
     me and <span data-mesh-source="others">2</span> others. Each of us gets
-    <span data-mesh-formula="@bananas / (@others + 1)">2</span> bananas.
+    <span data-mesh-target="@bananas / (@others + 1)">2</span> bananas.
 
     <script src="mesh.js"></script>
     <script>
@@ -43,13 +43,13 @@
   *   Type: Number
   *   Default: 50 (ms)
   *   How long mesh will wait for further changes to a source before updating
-  *   the formulas.
+  *   the targets.
   *
   *   `decimalPlaces`
   *   Type: Number
   *   Default: 2
   *   The default number of decimal places mesh will use if a `decimal`
-  *   attribute is found on a source or formula.
+  *   attribute is found on a source or target.
   *
   *   `save`
   *   Type: Boolean
@@ -96,8 +96,8 @@
     /* Recognised attribute types */
     var attr = {
       source    : config.prefix + 'source',
-      target    : config.prefix + 'formula',
-      whole     : config.prefix + 'whole',
+      target    : config.prefix + 'target',
+      floor     : config.prefix + 'floor',
       decimal   : config.prefix + 'decimal',
       min       : config.prefix + 'min',
       max       : config.prefix + 'max',
@@ -161,7 +161,7 @@
         }
 
         /* Round it if required*/
-        if ($this.is('['+attr.whole+']')) result = Math.floor(result);
+        if ($this.is('['+attr.floor+']')) result = Math.floor(result);
 
         if ($this.is('['+attr.currency+']')) result = currency(result);
 

@@ -27,7 +27,7 @@
     cursor: ns-resize;
   }
 
-  [data-mesh-formula] {
+  [data-mesh-target] {
     color: red;
   }
 
@@ -49,21 +49,21 @@
   apples to split between
   <span data-mesh-source="people" data-mesh-min="1" data-mesh-positive>3</span>
   people. Each gets
-  <span data-mesh-formula="@apples / @people" data-mesh-decimal="1">x</span> apples.
+  <span data-mesh-target="@apples / @people" data-mesh-decimal="1">x</span> apples.
 </p>
 
 <p>
   The square of
   <span data-mesh-source="x" data-mesh-max="10" data-mesh-min="-10">5</span>
   is
-  <span data-mesh-formula="@x * @x">x * x</span>.
+  <span data-mesh-target="@x * @x">x * x</span>.
 </p>
 
 <p>
   The cube root of
   <span data-mesh-source="y" data-mesh-max="100" data-mesh-min="1">27</span>
   is
-  <span data-mesh-formula="Math.pow(@y, 1/3)" data-mesh-decimal="4">y ^ 1/3</span>.
+  <span data-mesh-target="Math.pow(@y, 1/3)" data-mesh-decimal="4">y ^ 1/3</span>.
 </p>
 
 <p>
@@ -73,14 +73,14 @@
   <span data-mesh-source="items" data-mesh-positive>5</span>
   items on the page,
   the time taken to make a decision is
-  <span data-mesh-formula="@skill * (Math.log(@items + 1) / Math.log(2))" data-mesh-decimal></span>
+  <span data-mesh-target="@skill * (Math.log(@items + 1) / Math.log(2))" data-mesh-decimal></span>
   seconds.
 </p>
 
 <p>
   I have <span data-mesh-source="bananas">6</span> bananas to split between me
   and <span data-mesh-source="others">2</span> others. Each of us gets
-  <span data-mesh-formula="@bananas / (@others + 1)" data-mesh-whole>2</span> bananas.
+  <span data-mesh-target="@bananas / (@others + 1)" data-mesh-floor>2</span> bananas.
 </p>
 
 <p>
@@ -91,7 +91,21 @@
   of us &ndash; and we want to leave a
   <span data-mesh-source="tip" data-mesh-positive data-mesh-max="100">20</span>% tip.
   Each of us pays
-  £<span data-mesh-formula="(@bill * (1 + @tip / 100)) / @patrons" data-mesh-currency>x</span>.
+  £<span data-mesh-target="(@bill * (1 + @tip / 100)) / @patrons" data-mesh-currency>x</span>.
+</p>
+
+<hr>
+
+<p>
+  Including me, there are <span data-mesh-source="people" data-mesh-min="1">5</span> people.
+</p>
+
+<p>
+  Tax is currently at <span data-mesh-source="tax" data-mesh-max="100" data-mesh-positive>20</span>%.
+</p>
+
+<p>
+  Inflation is currently at <span data-mesh-source="inflation" data-mesh-decimal>0.1</span>%.
 </p>
 
 <script src="jquery.js"></script>
@@ -99,5 +113,6 @@
 <script>
   $.mesh({
     /* Config goes here! */
+    dragSpeed: 0.1
   });
 </script>
