@@ -267,7 +267,7 @@
                                                : Math.floor(raw_diff));
 
         /* Calculate the new value */
-        val = roundToDp(drag.start.val + diff, 14);
+        val = roundToDp(drag.start.val + diff, 1);
 
         /* And perform an update */
         updateValue(val);
